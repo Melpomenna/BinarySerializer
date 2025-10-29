@@ -1,0 +1,5 @@
+
+* text=auto
+
+# Binary formats
+*.dat filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "hashtable.h": "c",
+        "stdint.h": "c",
+        "stddef.h": "c",
+        "limits": "c"
+    }
+}

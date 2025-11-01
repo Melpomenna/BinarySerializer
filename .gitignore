@@ -273,5 +273,6 @@ bb.out.*
 
 # Other
 build
+perf.data*
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,c,clion+all,visualstudiocode,gcov,valgrind,autotools,cmake

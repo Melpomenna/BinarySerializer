@@ -27,7 +27,13 @@
         "BENCHMARK_INSTALL_DOCS": "OFF",
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
-        "BINARYSERIALIZER_BUTCHE_SIZE": "64"
+        "BINARYSERIALIZER_BUTCHE_SIZE": "64",
+        "BS_ENABLE_MI_MALLOC": true,
+        "MI_BUILD_TESTS": "OFF",
+        "MI_SECURE": "ON",
+        "MI_OVERRIDE": "ON",
+        "MI_PADDING": "OFF",
+        "REL_WITH_DEBUG_INFO": true
       }
     },
     {
@@ -37,8 +43,10 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BS_ENABLE_TEST": true,
-        "BS_ENABLE_BENCHMARKS": true,
-        "BS_ENABLE_FUZZ_TEST": true
+        "BS_ENABLE_BENCHMARKS": false,
+        "BS_ENABLE_FUZZ_TEST": true,
+        "MI_TRACK_ASAN": "ON",
+        "MI_DEBUG_FULL": "ON"
       }
     },
     {
@@ -47,7 +55,7 @@
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "BS_USE_PROFILE": false,
+        "BS_USE_PROFILE": true,
         "BS_ENABLE_TEST": true,
         "BS_ENABLE_BENCHMARKS": true,
         "BS_ENABLE_FUZZ_TEST": true

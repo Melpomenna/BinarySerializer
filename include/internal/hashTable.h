@@ -8,7 +8,10 @@
 #ifndef MERGEHASHTABLE_H
 #define MERGEHASHTABLE_H
 
-#define BINARYSERIALIZER_DEFUALT_BUCKETS_COUNT 8
+/*
+ * @brief default buckets size on init hash table
+ */
+#define BINARYSERIALIZER_DEFUALT_BUCKETS_COUNT 512
 
 #include "BinarySerializer/config.h"
 #include "BinarySerializer/statData.h"
@@ -60,8 +63,8 @@ initHashTable(MergeHashTable *table, HashFunction hash, MergeFunction merge,
 /*
  * @brief
  */
-BINARYSERIALIZER_API void insertToHashTable(MergeHashTable *table,
-                                            const StatData *data);
+BINARYSERIALIZER_NODISCARD BINARYSERIALIZER_API int
+insertToHashTable(MergeHashTable *table, const StatData *data);
 
 /*
  * @brief

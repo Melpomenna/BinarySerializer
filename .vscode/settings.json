@@ -3,6 +3,11 @@
         "hashtable.h": "c",
         "stdint.h": "c",
         "stddef.h": "c",
-        "limits": "c"
+        "limits": "c",
+        "unistd.h": "c",
+        "compare": "c",
+        "cstdint": "c",
+        "format": "c",
+        "statdata.h": "c"
     }
 }

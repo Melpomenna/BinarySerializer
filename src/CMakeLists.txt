@@ -16,3 +16,11 @@ target_include_directories(${target} PRIVATE
 target_compile_definitions(${target} PRIVATE
                            BINARYSERIALIZER_BUTCHE_SIZE=${BINARYSERIALIZER_BUTCHE_SIZE}
 )
+
+if (${BS_ENABLE_MI_MALLOC})
+    message(STATUS "Link bs library with mimalloc allocator")
+
+    target_compile_definitions(${target} PRIVATE BS_ENABLE_MI_MALLOC)
+
+    target_link_libraries(${target} PRIVATE mimalloc)
+endif()

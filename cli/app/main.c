@@ -3,12 +3,23 @@
 #include <assert.h>
 #include <stdio.h>
 
+#if defined(BS_ENABLE_MI_MALLOC)
+#include <mimalloc-override.h>
+#endif
+
+static int SortStatDataFunc(const void *__restrict lhs,
+                            const void *__restrict rhs) {
+  const StatData *sdlhs = lhs;
+  const StatData *sdrhs = rhs;
+  return sdlhs->cost > sdrhs->cost;
+}
+
 int main(int argc, char **argv) {
   if (argc != 3) {
     fprintf(stderr,
             "Program must have 3 argmunts in format: joinBs firstStoredPath "
             "secondStorePath resultPath.  All paths must be exited! [args "
-            "count:%d]",
+            "count:%d]\n",
             argc);
     return -1;
   }
@@ -17,15 +28,18 @@ int main(int argc, char **argv) {
   StatData *second = NULL;
   size_t firstSize = 0;
   size_t secondSize = 0;
-
-  if (LoadDump(argv[0], &first, &firstSize) != Success) {
-    assert(0);
-    fprintf(stderr, "Cannot load dump from: [path:%s]", argv[0]);
+  Status loadFirstSt = LoadDump(argv[0], &first, &firstSize);
+  if (loadFirstSt != Success) {
+    assert(loadFirstSt == Success);
+    fprintf(stderr, "Cannot load dump from: [path:%s][error:%d]\n", argv[0],
+            loadFirstSt);
   }
 
-  if (LoadDump(argv[1], &second, &secondSize) != Success) {
-    assert(0);
-    fprintf(stderr, "Cannot load dump from: [path:%s]", argv[1]);
+  Status loadSecondSt = LoadDump(argv[1], &second, &secondSize);
+  if (loadSecondSt != Success) {
+    assert(loadSecondSt == Success);
+    fprintf(stderr, "Cannot load dump from: [path:%s][error:%d]\n", argv[1],
+            loadSecondSt);
   }
 
   StatData *result = NULL;
@@ -38,7 +52,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  if (SortDump(result, resultSize, NULL) != Success) {
+  if (SortDump(result, resultSize, &SortStatDataFunc) != Success) {
     assert(0);
     return -1;
   }
@@ -55,6 +69,7 @@ int main(int argc, char **argv) {
   free(result);
   free(first);
   free(second);
+  fprintf(stdout, "Success serialize data\n");
 
   return 0;
 }

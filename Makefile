@@ -1,6 +1,6 @@
 .PHONY: build tests benchmarks
 
-PRESET=release
+PRESET=debug
 PERF_RECORD_STATS=branch-misses,bus-cycles,cache-misses,cpu-cycles
 
 all: configure

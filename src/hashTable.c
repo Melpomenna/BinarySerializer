@@ -281,7 +281,7 @@ void foreachElementInHashTable(const MergeHashTable *table,
 
   for (size_t i = 0; i < table->bucketsCount; ++i) {
     for (size_t j = 0; j < table->buckets[i].nodesCount; ++j) {
-      action(table->buckets[i].nodes[i].data, args);
+      action(table->buckets[i].nodes[j].data, args);
     }
   }
 }

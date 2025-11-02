@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 const StatData case_1_in_a[2] = {
@@ -27,7 +28,7 @@ static int checkEqualData(const StatData *__restrict first,
 static int checkResult(const StatData *data, size_t size) {
   for (size_t i = 0; i < size; ++i) {
     if (checkEqualData(data + i, &case_1_out[i]) != 1) {
-      fprintf(stderr, "Not equal at [index:%lu][%s]", i, "");
+      fprintf(stderr, "Not equal at [index:%lu]\n", i);
       return 0;
     }
   }
@@ -36,12 +37,12 @@ static int checkResult(const StatData *data, size_t size) {
 
 int main() {
   const char firstPath[] = "case_1_in_a.dat";
-  const char secondPath[] = "case_1_in_a.dat";
+  const char secondPath[] = "case_1_in_b.dat";
   const char resultPath[] = "case_1_out.dat";
 
   FILE *fd1 = fopen(firstPath, "wb+");
   FILE *fd2 = fopen(secondPath, "wb+");
-  FILE *fd3 = fopen(resultPath, "rb+");
+  FILE *fd3 = fopen(resultPath, "ab+");
 
   fclose(fd1);
   fclose(fd2);
@@ -49,31 +50,62 @@ int main() {
 
   if (StoreDump(firstPath, case_1_in_a,
                 sizeof(case_1_in_a) / sizeof(StatData)) != Success) {
-    fprintf(stderr, "Cannot store dump in: [path:%s]", firstPath);
+    remove(firstPath);
+    remove(secondPath);
+    remove(resultPath);
+    fprintf(stderr, "Cannot store dump in: [path:%s]\n", firstPath);
     return -1;
   }
 
   if (StoreDump(secondPath, case_1_in_b,
                 sizeof(case_1_in_b) / sizeof(StatData)) != Success) {
-    fprintf(stderr, "Cannot store dump in: [path:%s]", secondPath);
+    remove(firstPath);
+    remove(secondPath);
+    remove(resultPath);
+    fprintf(stderr, "Cannot store dump in: [path:%s]\n", secondPath);
     return -1;
   }
 
-  execl("serializeData", firstPath, secondPath, resultPath, NULL);
+  pid_t pid = fork();
+
+  if (pid == 0) {
+    execl("serializeData", firstPath, secondPath, resultPath, NULL);
+    remove(firstPath);
+    remove(secondPath);
+    remove(resultPath);
+    fprintf(stderr, "Simething went wrong");
+    exit(1);
+  }
+
+  int status = 0;
+  waitpid(pid, &status, 0);
 
   StatData *resultData = NULL;
   size_t resultSize = 0;
 
   if (LoadDump(resultPath, &resultData, &resultSize) != Success) {
+    fprintf(stderr, "Cannot load dump from [path:%s]\n", resultPath);
+    remove(firstPath);
+    remove(secondPath);
+    remove(resultPath);
     return -1;
   }
 
   assert(sizeof(case_1_out) / sizeof(StatData) == resultSize);
   assert(resultData);
 
-  if (!checkResult(resultData, resultSize)) {
+  if (checkResult(resultData, resultSize) == 0) {
+    assert(0);
+    remove(firstPath);
+    remove(secondPath);
+    remove(resultPath);
     return -1;
   }
+
+  remove(firstPath);
+  remove(secondPath);
+  remove(resultPath);
+  fprintf(stdout, "Success pass tests\n");
 
   return 0;
 }

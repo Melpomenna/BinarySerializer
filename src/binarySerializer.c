@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -20,38 +21,23 @@ Status StoreDump(const char *filePath, const StatData *data, size_t size) {
   if (BINARYSERIALIZER_UNLIKELY(!filePath || !data || size == 0))
     return InvalidPointerOrSize;
 
-  int fd = open(filePath, O_WRONLY);
-  if (fd < 0)
+  int fd = open(filePath, O_RDWR);
+  if (BINARYSERIALIZER_UNLIKELY(fd < 0))
     return BadFile;
 
-  size_t butchesCount = (size / butchSize) + 1;
-
-  size_t i = 0;
-  for (; i < butchesCount && size >= butchSize;
-       ++i, size -= butchSize, data += butchSize) {
-    char *addr = mmap(NULL, sizeof(StatData) * butchSize, PROT_WRITE,
-                      MAP_PRIVATE, fd, sizeof(StatData) * i);
-    if (BINARYSERIALIZER_UNLIKELY(!addr)) {
-      close(fd);
-      return Error;
-    }
-
-    memcpy(addr, data, sizeof(StatData) * butchSize);
-
-    munmap(addr, sizeof(StatData) * butchSize);
+  size_t fileSize = sizeof(StatData) * size;
+  if (BINARYSERIALIZER_UNLIKELY(ftruncate(fd, fileSize) == -1)) {
+    close(fd);
+    return BadFile;
   }
 
-  if (size != 0) {
-    char *addr = mmap(NULL, sizeof(StatData) * size, PROT_WRITE, MAP_PRIVATE,
-                      fd, sizeof(StatData) * i);
-    if (BINARYSERIALIZER_UNLIKELY(!addr)) {
-      close(fd);
-      return Error;
-    }
-
-    memcpy(addr, data, sizeof(StatData) * size);
-    munmap(addr, sizeof(StatData) * size);
-  }
+  void *addr =
+      mmap(NULL, sizeof(StatData) * size, PROT_WRITE, MAP_SHARED, fd, 0);
+  if (BINARYSERIALIZER_UNLIKELY(addr == MAP_FAILED))
+    return InvalidPointerOrSize;
+  memcpy(addr, data, sizeof(StatData) * size);
+  msync(addr, sizeof(StatData) * size, MS_ASYNC);
+  munmap(addr, sizeof(StatData) * size);
   close(fd);
 
   return Success;
@@ -60,30 +46,40 @@ Status StoreDump(const char *filePath, const StatData *data, size_t size) {
 Status LoadDump(const char *filePath, StatData **data, size_t *size) {
   if (BINARYSERIALIZER_UNLIKELY(!filePath || !data || !size))
     return InvalidPointerOrSize;
-  int fd = open(filePath, O_RDONLY);
-  if (fd < 0)
+  LOG("LoadDump: [path:%s]\n", filePath);
+  int fd = open(filePath, O_RDWR);
+  if (BINARYSERIALIZER_UNLIKELY(fd < 0)) {
+    LOG_ERR("LoadDump: cannot open file [path:%s]", filePath);
     return BadFile;
+  }
 
   size_t fileSize = 0;
   struct stat statBuf;
-  if (fstat(fd, &statBuf) < 0) {
+  int result = fstat(fd, &statBuf);
+  if (BINARYSERIALIZER_UNLIKELY(result < 0)) {
+    LOG_ERR("LoadDump: bad result on fstat: [result:%d]\n", result);
+    assert(result > 0);
     close(fd);
     return Error;
   }
   fileSize = statBuf.st_size;
 
   if (fileSize == 0) {
+    LOG_ERR("LoadDump: cannot load dump from empty file [paths:%s]\n",
+            filePath);
     close(fd);
     return BadFile;
   }
-
+  LOG("LoadDump: File opened with [size:%zu][StatData size:%zu]\n", fileSize,
+      sizeof(StatData));
   while (fileSize % sizeof(StatData) != 0)
     fileSize--;
-
-  size_t butchesCount = (fileSize / (sizeof(StatData) * butchSize)) + 1;
-
+  LOG("LoadDump: reduced size [size:%zu]\n", fileSize);
+  size_t butchesCount = (fileSize / (sizeof(StatData) * butchSize));
+  LOG("LoadDump: butches count [count:%zu]\n", butchesCount);
   size_t i = 0;
   size_t totalSize = fileSize / sizeof(StatData);
+  LOG("LoadDump: [totalSize:%zu]\n", totalSize);
   StatData *resultData = NULL;
   for (; i < butchesCount && totalSize >= butchSize;
        ++i, totalSize -= butchSize, resultData += butchSize) {
@@ -114,8 +110,8 @@ Status LoadDump(const char *filePath, StatData **data, size_t *size) {
       return Error;
     }
     resultData = rdata;
-    void *addr = mmap(NULL, sizeof(StatData) * totalSize, PROT_READ,
-                      MAP_PRIVATE, fd, sizeof(StatData) * totalSize);
+    void *addr = mmap(NULL, sizeof(StatData) * totalSize, PROT_READ, MAP_SHARED,
+                      fd, sizeof(StatData) * i);
     if (BINARYSERIALIZER_UNLIKELY(!addr)) {
       close(fd);
       free(resultData);
@@ -123,6 +119,7 @@ Status LoadDump(const char *filePath, StatData **data, size_t *size) {
       return Error;
     }
     memcpy(resultData, addr, sizeof(StatData) * totalSize);
+    msync(addr, sizeof(StatData) * totalSize, MS_ASYNC);
     munmap(addr, sizeof(StatData) * totalSize);
   }
 
@@ -176,10 +173,9 @@ Status JoinDump(const StatData *__restrict firstData, size_t firstSize,
 }
 
 Status SortDump(StatData *data, size_t size, SortFunction sortFunc) {
-  if (BINARYSERIALIZER_UNLIKELY(!data || size == 0))
+  if (BINARYSERIALIZER_UNLIKELY(!data || size == 0 || !sortFunc))
     return InvalidPointerOrSize;
-
-  qsort(data, sizeof(StatData), size, sortFunc);
+  qsort(data, size, sizeof(StatData), sortFunc);
   return Success;
 }
 

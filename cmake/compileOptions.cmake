@@ -105,6 +105,7 @@ function(SetCompileOptionsCXX target)
 endfunction()
 
 function(GlobalCompileOptionsCXX)
+    add_definitions(-D_XOPEN_SOURCE=700)
     if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
         message(STATUS "Debug type")
         add_compile_options(-g -fsanitize=address,undefined -O0)

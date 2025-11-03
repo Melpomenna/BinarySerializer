@@ -1,7 +1,10 @@
 name: Create Release
 
+permissions:
+  contents: write
+
 on:
-  workflow_dispatch:  # Ручной запуск с подтверждением
+  workflow_dispatch:
     inputs:
       version:
         description: 'Release version (e.g., v1.0.0)'
@@ -15,7 +18,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Configure project
       run: make configure PRESET=release
 

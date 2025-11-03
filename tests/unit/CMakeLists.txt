@@ -11,9 +11,10 @@ target_link_libraries(${target} PRIVATE
 )
 target_include_directories(${target} PRIVATE
 						   ${CMAKE_SOURCE_DIR}/include
-                           ${CMAKE_SOURCE_DIR}/include/internal
 )
 
+include(compileOptions)
+SetCompileOptionsCXX(${target})
 
 include(GoogleTest)
 gtest_discover_tests(${target})

@@ -2,7 +2,8 @@ set(target bs)
 
 add_library(${target} SHARED
 	binarySerializer.c
-    hashTable.c
+    mergeHashTable.c
+    tableView.c
 )
 
 include(compileOptions)
@@ -16,6 +17,12 @@ target_include_directories(${target} PRIVATE
 target_compile_definitions(${target} PRIVATE
                            BINARYSERIALIZER_BUTCHE_SIZE=${BINARYSERIALIZER_BUTCHE_SIZE}
 )
+
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    if (${BS_ENABLE_LOG})
+        target_compile_definitions(${target} PRIVATE BS_ENABLE_LOG)
+    endif()
+endif()
 
 if (${BS_ENABLE_MI_MALLOC})
     message(STATUS "Link bs library with mimalloc allocator")

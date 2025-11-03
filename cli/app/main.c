@@ -1,5 +1,6 @@
 #include "BinarySerializer/binarySerializer.h"
-
+#include "BinarySerializer/tableView.h"
+#include "utility/colorFormat.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -14,13 +15,25 @@ static int SortStatDataFunc(const void *__restrict lhs,
   return sdlhs->cost > sdrhs->cost;
 }
 
+void LoadDumpHelper(StatData **data, size_t *size, const char *path) {
+  Status loadFirstSt = LoadDump(path, data, size);
+  if (loadFirstSt == InvalidPointerOrSize || loadFirstSt == Error) {
+    fprintf(stderr, BS_RED("Cannot load dump from: [path:%s][error:%d]\n"),
+            path, loadFirstSt);
+  } else if (loadFirstSt == EmptyFile) {
+    fprintf(stdout, "Empty file [path:%s]\n", path);
+  }
+}
+
 int main(int argc, char **argv) {
-  if (argc != 3) {
-    fprintf(stderr,
-            "Program must have 3 argmunts in format: joinBs firstStoredPath "
-            "secondStorePath resultPath.  All paths must be exited! [args "
-            "count:%d]\n",
-            argc);
+  if (argc != 4) {
+    fprintf(
+        stderr,
+        BS_RED("Program must have 3 argmunts with application (total 4) in "
+               "format: joinBs firstStoredPath "
+               "secondStorePath resultPath.  All paths must be exited! [args "
+               "count:%d]\n"),
+        argc);
     return -1;
   }
 
@@ -28,48 +41,33 @@ int main(int argc, char **argv) {
   StatData *second = NULL;
   size_t firstSize = 0;
   size_t secondSize = 0;
-  Status loadFirstSt = LoadDump(argv[0], &first, &firstSize);
-  if (loadFirstSt != Success) {
-    assert(loadFirstSt == Success);
-    fprintf(stderr, "Cannot load dump from: [path:%s][error:%d]\n", argv[0],
-            loadFirstSt);
-  }
 
-  Status loadSecondSt = LoadDump(argv[1], &second, &secondSize);
-  if (loadSecondSt != Success) {
-    assert(loadSecondSt == Success);
-    fprintf(stderr, "Cannot load dump from: [path:%s][error:%d]\n", argv[1],
-            loadSecondSt);
-  }
-
-  StatData *result = NULL;
+  LoadDumpHelper(&first, &firstSize, argv[1]);
+  LoadDumpHelper(&second, &secondSize, argv[2]);
+  StatData *resultData = NULL;
   size_t resultSize = 0;
-  if (JoinDump(first, firstSize, second, secondSize, &result, &resultSize) !=
-      Success) {
-    assert(0);
-    free(first);
-    free(second);
+  BINARYSERIALIZER_UNUSED(
+      JoinDump(first, firstSize, second, secondSize, &resultData, &resultSize));
+
+  BINARYSERIALIZER_UNUSED(SortDump(resultData, resultSize, &SortStatDataFunc));
+
+  LOG("Result data size: [size:%zu]\n", resultSize);
+  TableView view;
+  TablewViewStatus tvStatus = initTableView(&view, NULL, NULL, 0);
+  if (tvStatus != TVSSuccess) {
+    fprintf(stderr, BS_RED("Cannot initTableView\n"));
     return -1;
   }
 
-  if (SortDump(result, resultSize, &SortStatDataFunc) != Success) {
-    assert(0);
-    return -1;
-  }
+  BINARYSERIALIZER_UNUSED(PrintDump(resultData, resultSize, 10, &view));
+  clearTableView(&view);
 
-  if (PrintDump(result, resultSize, 10, NULL) != Success) {
-    assert(0);
-    return -1;
-  }
+  BINARYSERIALIZER_UNUSED(StoreDump(argv[3], resultData, resultSize));
 
-  if (StoreDump(argv[2], result, resultSize) != Success) {
-    fprintf(stderr, "Cannot store dump in: [path:%s]", argv[2]);
-  }
-
-  free(result);
+  free(resultData);
   free(first);
   free(second);
-  fprintf(stdout, "Success serialize data\n");
+  fprintf(stdout, BS_GREEN("Success serialize data\n"));
 
   return 0;
 }

@@ -6,7 +6,9 @@ add_executable(${target}
 
 target_compile_definitions(${target} PRIVATE FUZZTEST_FUZZING_MODE=on)
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-	target_compile_definitions(${target} PRIVATE ADDRESS_SANITIZER)
+	if (${BS_ENABLE_ASAN})
+		target_compile_definitions(${target} PRIVATE ADDRESS_SANITIZER)
+	endif()
 endif()
 
 target_link_libraries(${target} PRIVATE
@@ -15,9 +17,10 @@ target_link_libraries(${target} PRIVATE
 
 target_include_directories(${target} PRIVATE
 						   ${CMAKE_SOURCE_DIR}/include
-                           ${CMAKE_SOURCE_DIR}/include/internal
 )
 
+include(compileOptions)
+SetCompileOptionsFuzzCXX(${target})
 
 include(GoogleTest)
 link_fuzztest(${target})

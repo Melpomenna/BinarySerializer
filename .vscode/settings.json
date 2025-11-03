@@ -9,6 +9,15 @@
         "cstdint": "c",
         "format": "c",
         "statdata.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "regex": "c",
+        "bitset": "c",
+        "time.h": "c",
+        "variant": "c",
+        "stdio.h": "c",
+        "binaryserializer.h": "c",
+        "app.h": "c",
+        "chrono": "c",
+        "functional": "c"
     }
 }

@@ -1,12 +1,15 @@
 #include "BinarySerializer/binarySerializer.h"
-#include "internal/hashTable.h"
+#include "BinarySerializer/mergeHashTable.h"
 
 #include <benchmark/benchmark.h>
 #include <memory>
 #include <random>
 #include <vector>
 
-static std::vector<long> ids;
+namespace {
+std::vector<long> ids;
+
+}
 
 static void DoSetup(const benchmark::State &state) {
   std::random_device rd;
@@ -93,7 +96,7 @@ BENCHMARK(TestInsertElementsWithUniquesId)
     ->Arg(500000)
     ->Arg(1000000)
     ->Arg(2000000)
-    ->Threads(16);
+    ->Iterations(10);
 
 BENCHMARK(TestInsertElementsWithNonUniquesId)
     ->Arg(0)
@@ -104,7 +107,7 @@ BENCHMARK(TestInsertElementsWithNonUniquesId)
     ->Arg(500000)
     ->Arg(1000000)
     ->Arg(2000000)
-    ->Threads(16);
+    ->Iterations(10);
 
 BENCHMARK(TestInsertElementsWithRandomId)
     ->Arg(0)
@@ -114,11 +117,8 @@ BENCHMARK(TestInsertElementsWithRandomId)
     ->Arg(200000)
     ->Arg(500000)
     ->Arg(750000)
-    ->Arg(800000)
-    ->Arg(850000)
-    ->Arg(900000)
     ->Arg(1000000)
     ->Arg(2000000)
-    ->Threads(16)
+    ->Iterations(10)
     ->Setup(DoSetup)
     ->Teardown(DoTeardown);

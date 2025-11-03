@@ -26,3 +26,5 @@ if (${BS_ENABLE_MI_MALLOC})
 
     target_link_libraries(${target} PRIVATE mimalloc)
 endif()
+
+install(TARGETS ${target} DESTINATION ${CMAKE_SOURCE_DIR}/install/${CMAKE_BUILD_TYPE}/bin)

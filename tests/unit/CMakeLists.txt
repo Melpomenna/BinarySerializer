@@ -18,3 +18,5 @@ SetCompileOptionsCXX(${target})
 
 include(GoogleTest)
 gtest_discover_tests(${target})
+
+install(TARGETS ${target} DESTINATION ${CMAKE_SOURCE_DIR}/install/${CMAKE_BUILD_TYPE}/bin)

@@ -19,6 +19,9 @@
         "CMAKE_C_EXTENSIONS": "ON",
         "CMAKE_CXX_STANDARD_REQUIRED": true,
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BENCHMARK_ENABLE_INSTALL": "OFF",
+        "INSTALL_GTEST": "OFF",
+        "BENCHMARK_INSTALL_TOOLS": "OFF",
         "CMAKE_C_STANDARD_REQUIRED": true,
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/build/${presetName}/WorkFolder",
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/build/${presetName}/WorkFolder",
@@ -46,7 +49,7 @@
       "displayName": "Debug",
       "inherits": "base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_BUILD_TYPE": "debug",
         "BS_ENABLE_ASAN": true,
         "BS_ENABLE_TEST": true,
         "BS_ENABLE_BENCHMARKS": false,
@@ -61,7 +64,7 @@
       "displayName": "Release",
       "inherits": "base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_BUILD_TYPE": "release",
         "BS_USE_PROFILE": false,
         "BS_ENABLE_TEST": true,
         "BS_ENABLE_BENCHMARKS": true,

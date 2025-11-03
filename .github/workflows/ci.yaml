@@ -1,0 +1,62 @@
+name: Advanced CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: self-hosted
+    
+    strategy:
+      matrix:
+        preset: [release, debug]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Cache CMake build
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/${{ matrix.preset }}
+          ~/.cache/ccache
+        key: ${{ runner.os }}-cmake-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-cmake-${{ matrix.preset }}-
+
+    - name: Setup ccache
+      run: |
+        ccache --max-size=500M
+        ccache --set-config=compression=true
+
+    - name: Configure
+      run: make configure PRESET=${{ matrix.preset }}
+
+    - name: Build
+      run: make build PRESET=${{ matrix.preset }}
+
+    - name: Run unit tests
+      run: make unit PRESET=${{ matrix.preset }}
+
+    - name: Run fuzzing (short)
+      if: matrix.preset == 'release'
+      run: make fuzzing PRESET=${{ matrix.preset }} FUZZ_TIME=30s
+      continue-on-error: true
+
+    - name: Run benchmarks
+      if: matrix.preset == 'release'
+      run: make benchmarks PRESET=${{ matrix.preset }}
+      continue-on-error: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.preset }}
+        path: |
+          build/${{ matrix.preset }}/Testing/
+        retention-days: 7

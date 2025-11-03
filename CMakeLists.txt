@@ -2,6 +2,8 @@
 
 enable_testing()
 
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
+
 project(BinarySerializer VERSION 1.0.0 LANGUAGES C CXX)
 
 

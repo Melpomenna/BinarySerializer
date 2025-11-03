@@ -5,7 +5,7 @@ add_executable(${target}
 )
 
 target_compile_definitions(${target} PRIVATE FUZZTEST_FUZZING_MODE=on)
-if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+if (${CMAKE_BUILD_TYPE} MATCHES "debug")
 	if (${BS_ENABLE_ASAN})
 		target_compile_definitions(${target} PRIVATE ADDRESS_SANITIZER)
 	endif()
@@ -25,3 +25,5 @@ SetCompileOptionsFuzzCXX(${target})
 include(GoogleTest)
 link_fuzztest(${target})
 gtest_discover_tests(${target})
+
+install(TARGETS ${target} DESTINATION ${CMAKE_SOURCE_DIR}/install/${CMAKE_BUILD_TYPE}/bin)

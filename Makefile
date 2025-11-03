@@ -1,6 +1,6 @@
-.PHONY: build tests benchmarks docs
+.PHONY: build tests benchmarks docs install
 
-PRESET=debug
+PRESET=release
 PERF_RECORD_STATS=branch-misses,bus-cycles,cache-misses,cpu-cycles
 FUZZ_TIME=120s
 VALGRIND_OPTIONS=--leak-check=full --track-fds=yes --track-origins=yes --leak-check=full
@@ -19,8 +19,10 @@ clean:
 	rm -rf build
 
 install:
+	cmake --install ./build/$(PRESET)
 
 uninstall:
+	rm -rf install
 
 clang-tidy:
 
@@ -76,7 +78,7 @@ gcov:
 open-report:
 
 test-utile:
-	./build/$(PRESET)/WorkFolder/testBS
+	PATH="$(PATH):$(shell pwd)/build/$(PRESET)/WorkFolder" testBS
 
 serializer-utile:
 	./build/$(PRESET)/WorkFolder/serializeData $(SERIALIZE_UTILE_ARGS)

@@ -106,8 +106,8 @@ static void startTest(const char *storePath1, const char *storePath2,
   }
 
   if (pid == 0) {
-    execl("./serializeData", "serializeData", storePath1, storePath2,
-          resultPath, NULL);
+    execlp("serializeData", "serializeData", storePath1, storePath2, resultPath,
+           NULL);
     exit(-1);
   }
 

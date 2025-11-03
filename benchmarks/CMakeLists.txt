@@ -10,3 +10,5 @@ target_include_directories(${target} PRIVATE
 
 include(compileOptions)
 SetCompileOptionsCXX(${target})
+
+install(TARGETS ${target} DESTINATION ${CMAKE_SOURCE_DIR}/install/${CMAKE_BUILD_TYPE}/bin)

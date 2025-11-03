@@ -1,0 +1,46 @@
+name: Create Release
+
+on:
+  workflow_dispatch:  # Ручной запуск с подтверждением
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    runs-on: self-hosted
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure project
+      run: make configure PRESET=release
+
+    - name: Build project
+      run: make build PRESET=release
+
+    - name: Install project
+      run: make install PRESET=release
+
+    - name: Create release archive
+      run: |
+        cd install
+        tar -czf ../release-${{ github.event.inputs.version }}.tar.gz .
+        cd ..
+        zip -r release-${{ github.event.inputs.version }}.zip install/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: Release ${{ github.event.inputs.version }}
+        draft: false
+        prerelease: false
+        files: |
+          release-${{ github.event.inputs.version }}.tar.gz
+          release-${{ github.event.inputs.version }}.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

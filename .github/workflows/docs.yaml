@@ -1,7 +1,12 @@
 name: Build Documentation
 
 on:
-  workflow_dispatch:  # Ручной запуск
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build-docs:

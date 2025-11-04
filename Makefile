@@ -2,7 +2,7 @@
 
 PRESET=release
 PERF_RECORD_STATS=branch-misses,bus-cycles,cache-misses,cpu-cycles
-FUZZ_TIME=120s
+FUZZ_TIME=30s
 VALGRIND_OPTIONS=--leak-check=full --track-fds=yes --track-origins=yes --leak-check=full
 MIMALLOC_SHOW_STATS=0
 

@@ -189,3 +189,7 @@ make perf-report
 
 # Документация по коду можно найти здесь
 [Документация](https://melpomenna.github.io/BinarySerializer/)
+
+
+# Покрытие
+![](./docs/Coverage.png)

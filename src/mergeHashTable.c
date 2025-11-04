@@ -2,17 +2,18 @@
 
 #include "BinarySerializer/config.h"
 
+#if defined(BS_ENABLE_MI_MALLOC)
+#include <mimalloc-override.h>
+#else
+#include <stdlib.h>
+#endif
+
 #ifndef NDEBUG
 #include <stdio.h>
 #endif
 
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
-
-#if defined(BS_ENABLE_MI_MALLOC)
-#include <mimalloc-override.h>
-#endif
 
 /**
  * @struct Node
@@ -31,7 +32,7 @@
 typedef struct Node {
   struct Bucket *bucket; /**< Указатель на родительский bucket */
   StatData *data; /**< Данные узла (выделены динамически) */
-  hash_t hash; /**< Предвычисленное хеш-значение для оптимизации */
+  HashT hash; /**< Предвычисленное хеш-значение для оптимизации */
   size_t index; /**< Индекс узла внутри bucket->nodes */
 } Node;
 
@@ -127,7 +128,7 @@ static void HashTableToArrayHelperFunc(StatData *__restrict data,
  *
  * @see MergeHashTable
  */
-static size_t BucketIndex(const MergeHashTable *table, hash_t hash) {
+static size_t BucketIndex(const MergeHashTable *table, HashT hash) {
   return (hash ^ (hash >> 16)) & (table->bucketsCount - 1);
 }
 
@@ -157,16 +158,16 @@ static size_t BucketIndex(const MergeHashTable *table, hash_t hash) {
  * @par Пример:
  * @code{.c}
  * StatData data = { .id = 12345, ... };
- * hash_t h = DefaultMurmurHash2(&data);
+ * HashT h = DefaultMurmurHash2(&data);
  * size_t bucket_idx = BucketIndex(table, h);
  * @endcode
  */
-static hash_t DefaultMurmurHash2(const StatData *stData) {
-  hash_t m = 0xc6a4a7935bd1e995ULL;
+static HashT DefaultMurmurHash2(const StatData *stData) {
+  HashT m = 0xc6a4a7935bd1e995ULL;
   const int r = 47;
-  hash_t h = 0x8445d61a4e774912ULL ^ (8 * m);
+  HashT h = 0x8445d61a4e774912ULL ^ (8 * m);
 
-  hash_t k = stData->id;
+  HashT k = stData->id;
   k *= m;
   k ^= k >> r;
   k *= m;
@@ -288,7 +289,7 @@ static int DefaultStatDataComparator(const StatData *__restrict lhs,
  *
  * @see Bucket, Node
  */
-static void clearBucket(Bucket *bucket) {
+static void ClearBucket(Bucket *bucket) {
   for (size_t i = 0; i < bucket->nodesCount; ++i) {
     free(bucket->nodes[i].data);
   }
@@ -342,10 +343,10 @@ static void clearBucket(Bucket *bucket) {
  * @see Bucket, Node, MergeHashTable
  *
  */
-BINARYSERIALIZER_NODISCARD static int insertIntoBucket(MergeHashTable *table,
+BINARYSERIALIZER_NODISCARD static int InsertIntoBucket(MergeHashTable *table,
                                                        Bucket *bucket,
                                                        const StatData *data,
-                                                       hash_t hash) {
+                                                       HashT hash) {
   for (size_t i = 0; i < bucket->nodesCount; ++i) {
     if (bucket->nodes[i].hash == hash &&
         table->comparator(bucket->nodes[i].data, data) == 1) {
@@ -369,7 +370,7 @@ BINARYSERIALIZER_NODISCARD static int insertIntoBucket(MergeHashTable *table,
     }
   }
 
-  int nodesCount = bucket->nodesCount;
+  size_t nodesCount = bucket->nodesCount;
   bucket->nodes = p;
   p[nodesCount].hash = hash;
   memcpy(newData, data, sizeof(StatData));
@@ -380,10 +381,11 @@ BINARYSERIALIZER_NODISCARD static int insertIntoBucket(MergeHashTable *table,
   return 1;
 }
 
-int initHashTable(MergeHashTable *table, HashFunction hash, MergeFunction merge,
+int InitHashTable(MergeHashTable *table, HashFunction hash, MergeFunction merge,
                   StatDataCompareFunction comparator) {
-  if (BINARYSERIALIZER_UNLIKELY(!table))
+  if (BINARYSERIALIZER_UNLIKELY(!table)) {
     return 0;
+  }
   table->hash = hash ? hash : &DefaultMurmurHash2;
   table->merge = merge ? merge : &DefaultMerge;
   table->comparator = comparator ? comparator : &DefaultStatDataComparator;
@@ -400,23 +402,25 @@ int initHashTable(MergeHashTable *table, HashFunction hash, MergeFunction merge,
   return table->buckets != NULL;
 }
 
-int insertToHashTable(MergeHashTable *table, const StatData *data) {
+int InsertToHashTable(MergeHashTable *table, const StatData *data) {
   if (BINARYSERIALIZER_UNLIKELY(!table || !data || !table->hash ||
-                                !table->merge))
+                                !table->merge)) {
     return 0;
-  hash_t hash = table->hash(data);
+  }
+  HashT hash = table->hash(data);
   size_t index = BucketIndex(table, hash);
   assert(index < table->bucketsCount);
-  return insertIntoBucket(table, table->buckets + index, data, hash);
+  return InsertIntoBucket(table, table->buckets + index, data, hash);
 }
 
-void eraseFromHashTable(MergeHashTable *table, const StatData *data) {
-  Node *node = findInHashTable(table, data);
-  if (BINARYSERIALIZER_UNLIKELY(!node))
+void EraseFromHashTable(MergeHashTable *table, const StatData *data) {
+  Node *node = FindInHashTable(table, data);
+  if (BINARYSERIALIZER_UNLIKELY(!node)) {
     return;
+  }
 
   if (node->bucket->nodesCount - 1 == 0) {
-    clearBucket(node->bucket);
+    ClearBucket(node->bucket);
     return;
   }
 
@@ -434,28 +438,31 @@ void eraseFromHashTable(MergeHashTable *table, const StatData *data) {
   node->bucket->nodesCount--;
 }
 
-Node *findInHashTable(const MergeHashTable *table, const StatData *data) {
-  if (BINARYSERIALIZER_UNLIKELY(!table || !data || !table->hash))
+Node *FindInHashTable(const MergeHashTable *table, const StatData *data) {
+  if (BINARYSERIALIZER_UNLIKELY(!table || !data || !table->hash)) {
     return NULL;
+  }
 
-  hash_t hash = table->hash(data);
+  HashT hash = table->hash(data);
   size_t index = BucketIndex(table, hash);
 
-  Bucket *bucket = table->buckets + index;
+  const Bucket *bucket = table->buckets + index;
   for (size_t i = 0; i < bucket->nodesCount; ++i) {
-    if (bucket->nodes[i].hash == hash)
+    if (bucket->nodes[i].hash == hash) {
       return bucket->nodes + i;
+    }
   }
 
   return NULL;
 }
 
-void clearHashTable(MergeHashTable *table) {
-  if (BINARYSERIALIZER_UNLIKELY(!table))
+void ClearHashTable(MergeHashTable *table) {
+  if (BINARYSERIALIZER_UNLIKELY(!table)) {
     return;
+  }
 
   for (unsigned long i = 0; i < table->bucketsCount; ++i) {
-    clearBucket(table->buckets + i);
+    ClearBucket(table->buckets + i);
   }
 
   free(table->buckets);
@@ -466,12 +473,12 @@ void clearHashTable(MergeHashTable *table) {
   table->comparator = NULL;
 }
 
-int hashTableToArray(const MergeHashTable *table, StatData **data,
+int HashTableToArray(const MergeHashTable *table, StatData **data,
                      size_t *size) {
-  LOG("[hashTableToArray begin]_____________________\n");
+  LOG("[HashTableToArray begin]_____________________\n");
   if (BINARYSERIALIZER_UNLIKELY(!table || !data || !size)) {
     LOG_ERR("Null data\n");
-    LOG("[hashTableToArray end]_____________________\n");
+    LOG("[HashTableToArray end]_____________________\n");
     return 0;
   }
   size_t totalDataSize = 0;
@@ -481,14 +488,14 @@ int hashTableToArray(const MergeHashTable *table, StatData **data,
 
   if (totalDataSize == 0) {
     LOG_ERR("Empty totalSize for hashTable\n");
-    LOG("[hashTableToArray end]_____________________\n");
+    LOG("[HashTableToArray end]_____________________\n");
     return 0;
   }
   StatData *memBlock = malloc(sizeof(StatData) * totalDataSize);
 
   if (BINARYSERIALIZER_UNLIKELY(!memBlock)) {
     LOG_ERR("Cannot allocate [bytes:%zu]\n", sizeof(StatData) * totalDataSize);
-    LOG("[hashTableToArray end]_____________________\n");
+    LOG("[HashTableToArray end]_____________________\n");
     return 0;
   }
   *size = totalDataSize;
@@ -496,15 +503,16 @@ int hashTableToArray(const MergeHashTable *table, StatData **data,
   HashNodeToArrayHelper helper;
   helper.data = memBlock;
   helper.shift = 0;
-  foreachElementInHashTable(table, &HashTableToArrayHelperFunc, &helper);
-  LOG("[hashTableToArray end]_____________________\n");
+  ForeachElementInHashTable(table, &HashTableToArrayHelperFunc, &helper);
+  LOG("[HashTableToArray end]_____________________\n");
   return 1;
 }
 
-void foreachElementInHashTable(const MergeHashTable *table,
+void ForeachElementInHashTable(const MergeHashTable *table,
                                ForeachFunction action, void *args) {
-  if (BINARYSERIALIZER_UNLIKELY(!table || !action))
+  if (BINARYSERIALIZER_UNLIKELY(!table || !action)) {
     return;
+  }
 
   for (size_t i = 0; i < table->bucketsCount; ++i) {
     for (size_t j = 0; j < table->buckets[i].nodesCount; ++j) {

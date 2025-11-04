@@ -27,11 +27,11 @@
  * @brief Коды возврата функций библиотеки
  */
 typedef enum Status {
-  Success, /**< Операция выполнена успешно */
-  BadFile, /**< Ошибка работы с файлом (не найден, нет прав доступа) */
-  EmptyFile, /**< Для LoadDump был подан пустой файл */
-  InvalidPointerOrSize, /**< Невалидный указатель или размер данных */
-  Error /**< Общая ошибка выполнения */
+  SUCCESS,  /**< Операция выполнена успешно */
+  BAD_FILE, /**< Ошибка работы с файлом (не найден, нет прав доступа) */
+  EMPTY_FILE, /**< Для LoadDump был подан пустой файл */
+  INVALID_POINTER_OR_SIZE, /**< Невалидный указатель или размер данных */
+  ERROR /**< Общая ошибка выполнения */
 } Status;
 
 /**
@@ -74,11 +74,12 @@ extern "C" {
  * @param[in] data Указатель на массив структур StatData (не должен быть NULL)
  * @param[in] size Количество элементов в массиве (должно быть > 0)
  *
- * @return Success при успешном сохранении
- * @return BadFile если не удалось открыть файл
- * @return InvalidPointerOrSize если data == NULL, filePath == NULL или size ==
+ * @return SUCCESS при успешном сохранении
+ * @return BAD_FILE если не удалось открыть файл
+ * @return INVALID_POINTER_OR_SIZE если data == NULL, filePath == NULL или size
+ * ==
  * 0
- * @return Error при ошибке записи данных
+ * @return ERROR при ошибке записи данных
  *
  * @warning Функция не проверяет корректность содержимого структур StatData и не
  * создает файл
@@ -88,7 +89,7 @@ extern "C" {
  * StatData data[100];
  * // ... заполнение данных ...
  * Status result = StoreDump("output.bin", data, 100);
- * if (result != Success) {
+ * if (result != SUCCESS) {
  *     fprintf(stderr, "Ошибка сохранения: %d\n", result);
  * }
  * @endcode
@@ -110,11 +111,11 @@ StoreDump(const char *filePath, const StatData *data, size_t size);
  * @param[out] size Указатель, куда будет записано количество загруженных
  * элементов (не должен быть NULL)
  *
- * @return Success при успешной загрузке
- * @return BadFile если файл не найден или не может быть открыт
- * @return InvalidPointerOrSize если data == NULL, size == NULL или filePath ==
- * NULL
- * @return Error при ошибке чтения данных или выделения памяти
+ * @return SUCCESS при успешной загрузке
+ * @return BAD_FILE если файл не найден или не может быть открыт
+ * @return INVALID_POINTER_OR_SIZE если data == NULL, size == NULL или filePath
+ * == NULL
+ * @return ERROR при ошибке чтения данных или выделения памяти
  *
  * @warning Вызывающая сторона ОБЯЗАНА освободить память
  * @note При ошибке *data и *size не изменяются
@@ -124,7 +125,7 @@ StoreDump(const char *filePath, const StatData *data, size_t size);
  * StatData *data = NULL;
  * size_t size = 0;
  * Status result = LoadDump("input.bin", &data, &size);
- * if (result == Success) {
+ * if (result == SUCCESS) {
  *     // Работа с данными
  *     for (size_t i = 0; i < size; i++) {
  *         // process data[i]
@@ -158,9 +159,9 @@ LoadDump(const char *filePath, StatData **data, size_t *size);
  * @param[out] resultSize Указатель, куда будет записан размер результата
  *                        (resultSize = firstSize + secondSize)
  *
- * @return Success при успешном объединении
- * @return InvalidPointerOrSize если любой из указателей NULL или size == 0
- * @return Error при ошибке выделения памяти
+ * @return SUCCESS при успешном объединении
+ * @return INVALID_POINTER_OR_SIZE если любой из указателей NULL или size == 0
+ * @return ERROR при ошибке выделения памяти
  *
  * @warning Вызывающая сторона ОБЯЗАНА освободить память для результирующего
 массива
@@ -175,7 +176,7 @@ LoadDump(const char *filePath, StatData **data, size_t *size);
  * size_t mergedSize = 0;
  *
  * Status result = JoinDump(first, 100, second, 50, &merged, &mergedSize);
- * if (result == Success) {
+ * if (result == SUCCESS) {
  *     // mergedSize == 150
  *     free(merged); // Обязательно!
  * }
@@ -198,8 +199,9 @@ JoinDump(const StatData *__restrict firstData, size_t firstSize,
  * @param[in] size Количество элементов в массиве (должно быть > 0)
  * @param[in] sortFunc Функция сравнения (не должна быть NULL)
  *
- * @return Success при успешной сортировке
- * @return InvalidPointerOrSize если data == NULL, sortFunc == NULL или size ==
+ * @return SUCCESS при успешной сортировке
+ * @return INVALID_POINTER_OR_SIZE если data == NULL, sortFunc == NULL или size
+ * ==
  * 0
  *
  * @note Массив изменяется непосредственно (in-place сортировка)
@@ -235,10 +237,10 @@ SortDump(StatData *data, size_t size, SortFunction sortFunc);
  * @param[in] tableView Указатель на структуру для вывода данных в формате
  * таблицы
  *
- * @return Success при успешном выводе
- * @return InvalidPointerOrSize если data == NULL или size == 0 или tableView ==
- * NULL
- * @return Error при ошибке вывода
+ * @return SUCCESS при успешном выводе
+ * @return INVALID_POINTER_OR_SIZE если data == NULL или size == 0 или tableView
+ * == NULL
+ * @return ERROR при ошибке вывода
  *
  * @note Вывод выполняется в stdout
  * @note Формат вывода зависит от реализации (определяется структурой StatData)

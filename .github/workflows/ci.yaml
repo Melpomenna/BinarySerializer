@@ -39,6 +39,12 @@ jobs:
     - name: Build
       run: make build PRESET=${{ matrix.preset }}
 
+    - name: Run cppcheck
+      run: make cppcheck PRESET=${{ matrix.preset }}
+
+    - name: Run clang-tidy
+      run: make clang-tidy PRESET=${{ matrix.preset }}
+
     - name: Run unit tests
       run: make unit PRESET=${{ matrix.preset }}
 

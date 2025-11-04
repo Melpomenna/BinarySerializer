@@ -3,15 +3,16 @@
 
 #if defined(BS_ENABLE_MI_MALLOC)
 #include <mimalloc-override.h>
+#else
+#include <stdlib.h>
 #endif
 
-#include "tableViewImpl.h"
+#include "BinarySerializer/tableView.h"
 
 #include <assert.h>
 #include <fcntl.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -20,7 +21,7 @@
 static const size_t butchSize = BINARYSERIALIZER_BUTCHE_SIZE;
 static const size_t butchesSizeInBytes = butchSize * sizeof(StatData);
 
-static void closeFd(const char *filePath, int fd) {
+static void CloseFd(const char *filePath, int fd) {
   int result = close(fd);
   assert(result == 0);
   if (result != 0) {
@@ -29,7 +30,7 @@ static void closeFd(const char *filePath, int fd) {
   }
 }
 
-static void tmsync(void *addr, size_t len, int flags) {
+static void Tmsync(void *addr, size_t len, int flags) {
   int result = msync(addr, len, flags);
   assert(result == 0);
   if (result != 0) {
@@ -37,7 +38,7 @@ static void tmsync(void *addr, size_t len, int flags) {
   }
 }
 
-static void tmunmap(void *addr, size_t len) {
+static void Tmunmap(void *addr, size_t len) {
   int result = munmap(addr, len);
   assert(result == 0);
   if (result != 0) {
@@ -50,40 +51,40 @@ Status StoreDump(const char *filePath, const StatData *data, size_t size) {
   if (BINARYSERIALIZER_UNLIKELY(!filePath || !data || size == 0)) {
     LOG_ERR("Bad filePath or data or size=0\n");
     LOG("[StoreDump end]_____________________\n");
-    return InvalidPointerOrSize;
+    return INVALID_POINTER_OR_SIZE;
   }
   int fd = open(filePath, O_RDWR);
   if (BINARYSERIALIZER_UNLIKELY(fd < 0)) {
     LOG_ERR("Cannot open file with [path:%s]\n", filePath);
     LOG("[StoreDump end]_____________________\n");
-    return BadFile;
+    return BAD_FILE;
   }
 
   size_t fileSize = sizeof(StatData) * size;
   if (BINARYSERIALIZER_UNLIKELY(ftruncate(fd, fileSize) == -1)) {
-    closeFd(filePath, fd);
+    CloseFd(filePath, fd);
     LOG_ERR("Cannot truncate file [filePath:%s] to size [size:%zu]", filePath,
             fileSize);
     LOG("[StoreDump end]_____________________\n");
-    return BadFile;
+    return BAD_FILE;
   }
   LOG("[filePath:%s] [fd:%d] [dataSize:%zu] [fileSize:%zu]\n", filePath, fd,
       size, fileSize);
   void *addr =
       mmap(NULL, sizeof(StatData) * size, PROT_WRITE, MAP_SHARED, fd, 0);
   if (BINARYSERIALIZER_UNLIKELY(addr == MAP_FAILED)) {
-    closeFd(filePath, fd);
+    CloseFd(filePath, fd);
     LOG_ERR("Cannot mmap file [filePath:%s] with size [size:%zu][line:%d]\n",
             filePath, fileSize, __LINE__);
     LOG("[StoreDump end]_____________________\n");
-    return InvalidPointerOrSize;
+    return INVALID_POINTER_OR_SIZE;
   }
   memcpy(addr, data, sizeof(StatData) * size);
-  tmsync(addr, sizeof(StatData) * size, MS_ASYNC);
-  tmunmap(addr, sizeof(StatData) * size);
-  closeFd(filePath, fd);
+  Tmsync(addr, sizeof(StatData) * size, MS_ASYNC);
+  Tmunmap(addr, sizeof(StatData) * size);
+  CloseFd(filePath, fd);
   LOG("[StoreDump end]_____________________\n");
-  return Success;
+  return SUCCESS;
 }
 
 Status LoadDump(const char *filePath, StatData **data, size_t *size) {
@@ -91,14 +92,14 @@ Status LoadDump(const char *filePath, StatData **data, size_t *size) {
   if (BINARYSERIALIZER_UNLIKELY(!filePath || !data || !size)) {
     LOG_ERR("Bad filePath or data or size\n");
     LOG("[LoadDump end]_____________________\n");
-    return InvalidPointerOrSize;
+    return INVALID_POINTER_OR_SIZE;
   }
   LOG("[path:%s]\n", filePath);
   int fd = open(filePath, O_RDWR);
   if (BINARYSERIALIZER_UNLIKELY(fd < 0)) {
     LOG_ERR("LoadDump: cannot open file [path:%s]\n", filePath);
     LOG("[LoadDump end]_____________________\n");
-    return BadFile;
+    return BAD_FILE;
   }
 
   size_t fileSize = 0;
@@ -106,19 +107,19 @@ Status LoadDump(const char *filePath, StatData **data, size_t *size) {
   int result = fstat(fd, &statBuf);
   if (BINARYSERIALIZER_UNLIKELY(result < 0)) {
     assert(result == 0);
-    closeFd(filePath, fd);
+    CloseFd(filePath, fd);
     LOG_ERR("LoadDump: bad result on fstat [result:%d]\n", result);
     LOG("[LoadDump end]_____________________\n");
-    return Error;
+    return ERROR;
   }
   fileSize = statBuf.st_size;
 
   if (fileSize == 0 || fileSize < sizeof(StatData)) {
-    closeFd(filePath, fd);
+    CloseFd(filePath, fd);
     LOG_ERR("Cannot load dump from empty or zero elements file [paths:%s]\n",
             filePath);
     LOG("[LoadDump end]_____________________\n");
-    return EmptyFile;
+    return EMPTY_FILE;
   }
 
   LOG("File opened with [size:%zu][StatData size:%zu]\n", fileSize,
@@ -140,21 +141,21 @@ Status LoadDump(const char *filePath, StatData **data, size_t *size) {
     StatData *rdata = realloc(resultData, butchesSizeInBytes * (i + 1));
     if (BINARYSERIALIZER_UNLIKELY(!rdata)) {
       free(resultData);
-      closeFd(filePath, fd);
+      CloseFd(filePath, fd);
       LOG_ERR("Cannot allocate [bytes:%zu]\n", butchesSizeInBytes * (i + 1));
       LOG("[LoadDump end]_____________________\n");
-      return Error;
+      return ERROR;
     }
     resultData = rdata;
     void *addr = mmap(baseAddr, butchesSizeInBytes * (i + 1), PROT_READ,
                       MAP_SHARED, fd, 0);
     if (BINARYSERIALIZER_UNLIKELY(addr == MAP_FAILED)) {
       free(resultData);
-      closeFd(filePath, fd);
+      CloseFd(filePath, fd);
       LOG_ERR("Cannot mmap file [filePath:%s] with size [size:%zu][line:%d]\n",
               filePath, butchesSizeInBytes, __LINE__);
       LOG("[LoadDump end]_____________________\n");
-      return Error;
+      return ERROR;
     }
     baseAddr = addr;
     memcpy(resultData + i * butchSize,
@@ -166,34 +167,34 @@ Status LoadDump(const char *filePath, StatData **data, size_t *size) {
     StatData *rdata = realloc(resultData, fileSize);
     if (BINARYSERIALIZER_UNLIKELY(!rdata)) {
       free(resultData);
-      closeFd(filePath, fd);
+      CloseFd(filePath, fd);
       LOG_ERR("Cannot allocate [bytes:%zu]\n", fileSize);
       LOG("[LoadDump end]_____________________\n");
-      return Error;
+      return ERROR;
     }
     resultData = rdata;
     void *addr = mmap(NULL, fileSize, PROT_READ, MAP_SHARED, fd, 0);
     if (BINARYSERIALIZER_UNLIKELY(addr == MAP_FAILED)) {
       free(resultData);
-      closeFd(filePath, fd);
+      CloseFd(filePath, fd);
       LOG_ERR("Cannot mmap file [filePath:%s] with size [size:%zu][line:%d]\n",
               filePath, butchesSizeInBytes, __LINE__);
       LOG("[LoadDump end]_____________________\n");
-      return Error;
+      return ERROR;
     }
     baseAddr = addr;
     memcpy(resultData + i * butchSize,
            (char *)baseAddr + i * butchesSizeInBytes, totalSize);
   }
 
-  tmsync(baseAddr, fileSize, MS_ASYNC);
-  tmunmap(baseAddr, fileSize);
+  Tmsync(baseAddr, fileSize, MS_ASYNC);
+  Tmunmap(baseAddr, fileSize);
 
-  closeFd(filePath, fd);
+  CloseFd(filePath, fd);
   *data = resultData;
   *size = fileSize / sizeof(StatData);
   LOG("[LoadDump end]_____________________\n");
-  return Success;
+  return SUCCESS;
 }
 
 Status JoinDump(const StatData *__restrict firstData, size_t firstSize,
@@ -205,59 +206,64 @@ Status JoinDump(const StatData *__restrict firstData, size_t firstSize,
                                 !resultData || !resultSize)) {
     LOG_ERR("All data or result data is null or empty\n");
     LOG("[LoadDump end]_____________________\n");
-    return InvalidPointerOrSize;
+    return INVALID_POINTER_OR_SIZE;
   }
 
   MergeHashTable table;
-  if (BINARYSERIALIZER_UNLIKELY(!initHashTable(&table, NULL, NULL, NULL))) {
+  if (BINARYSERIALIZER_UNLIKELY(!InitHashTable(&table, NULL, NULL, NULL))) {
     LOG_ERR("Cannot init MergeHashTable\n");
     LOG("[LoadDump end]_____________________\n");
-    return Error;
+    return ERROR;
   }
-  size_t maxSize = fmax(firstSize, secondSize);
+  size_t maxSize = fmax((double)firstSize, (double)secondSize);
   for (size_t i = 0; i < maxSize; ++i) {
     if (i < firstSize) {
       if (BINARYSERIALIZER_LIKELY(firstData)) {
-        int result = insertToHashTable(&table, firstData + i);
+        int result = InsertToHashTable(&table, firstData + i);
         assert(result == 1);
         if (result != 1) {
-          clearHashTable(&table);
+          ClearHashTable(&table);
           LOG_ERR("Cannot insert value into hash table\n");
           LOG("[LoadDump end]_____________________\n");
-          return Error;
+          return ERROR;
         }
       }
     }
 
     if (i < secondSize) {
       if (BINARYSERIALIZER_LIKELY(secondData)) {
-        int result = insertToHashTable(&table, secondData + i);
+        int result = InsertToHashTable(&table, secondData + i);
         assert(result == 1);
         if (result != 1) {
-          clearHashTable(&table);
+          ClearHashTable(&table);
           LOG_ERR("Cannot insert value into hash table\n");
           LOG("[LoadDump end]_____________________\n");
-          return Error;
+          return ERROR;
         }
       }
     }
   }
 
   Status result =
-      hashTableToArray(&table, resultData, resultSize) ? Success : Error;
-  clearHashTable(&table);
-  if (result != Success) {
-    LOG_ERR("hashTableToArray failed\n");
+      HashTableToArray(&table, resultData, resultSize) ? SUCCESS : ERROR;
+  ClearHashTable(&table);
+  if (result != SUCCESS) {
+    LOG_ERR("HashTableToArray failed\n");
   }
   LOG("[LoadDump end]_____________________\n");
   return result;
 }
 
 Status SortDump(StatData *data, size_t size, SortFunction sortFunc) {
-  if (BINARYSERIALIZER_UNLIKELY(!data || size == 0 || !sortFunc))
-    return InvalidPointerOrSize;
+  LOG("[SortDump begin]_____________________\n");
+  if (BINARYSERIALIZER_UNLIKELY(!data || size == 0 || !sortFunc)) {
+    LOG_ERR("Data is null or empty or null sortFunc\n");
+    LOG("[SortDump end]_____________________\n");
+    return INVALID_POINTER_OR_SIZE;
+  }
   qsort(data, size, sizeof(StatData), sortFunc);
-  return Success;
+  LOG("[SortDump end]_____________________\n");
+  return SUCCESS;
 }
 
 Status PrintDump(const StatData *data, size_t size, size_t linesCount,
@@ -266,16 +272,16 @@ Status PrintDump(const StatData *data, size_t size, size_t linesCount,
   if (BINARYSERIALIZER_UNLIKELY(!data || size == 0 || !view)) {
     LOG_ERR("Invalid pointer or size\n");
     LOG("[PrintDump end]_____________________\n");
-    return InvalidPointerOrSize;
+    return INVALID_POINTER_OR_SIZE;
   }
   view->data = data;
   view->dataSize = size;
   view->memSize = sizeof(StatData);
 
-  TablewViewStatus status = printTable(view, linesCount);
-  if (BINARYSERIALIZER_UNLIKELY(status == TVSError)) {
+  TablewViewStatus status = PrintTable(view, linesCount);
+  if (BINARYSERIALIZER_UNLIKELY(status == TVS_ERROR)) {
     LOG_ERR("Something then wrong with printTable\n");
   }
   LOG("[PrintDump end]_____________________\n");
-  return status != TVSError ? Success : Error;
+  return status != TVS_ERROR ? SUCCESS : ERROR;
 }

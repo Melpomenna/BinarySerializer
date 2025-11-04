@@ -17,7 +17,7 @@ typedef struct TestCase
 } TestCase;
 
 
-BINARYSERIALIZER_NODISCARD TestCase* getTestCase(size_t id);
-BINARYSERIALIZER_NODISCARD size_t getTestsCount();
+BINARYSERIALIZER_NODISCARD TestCase* GetTestCase(size_t id);
+BINARYSERIALIZER_NODISCARD size_t GetTestsCount();
 
 #endif

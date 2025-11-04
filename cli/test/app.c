@@ -16,23 +16,25 @@
           __time)
 
 #define BS_TEST_PASSED(__index, __time)                                        \
-  fprintf(stdout, BS_GREEN("Test [%zu] success, time:%0.6f ms\n"), __index,    \
+  fprintf(stdout, BS_GREEN("Test [%zu] SUCCESS, time:%0.6f ms\n"), __index,    \
           __time)
 
-static int checkEqualData(const StatData *__restrict first,
+#define BS_EPS 1E-5
+
+static int CheckEqualData(const StatData *__restrict first,
                           const StatData *__restrict second) {
   return first->id == second->id && first->count == second->count &&
-         (fabs(first->cost - second->cost) <= 1E-7) &&
+         (fabsf(first->cost - second->cost) <= BS_EPS) &&
          first->primary == second->primary && first->mode == second->mode;
 }
 
-static void getBufferedData(char *__restrict buff, size_t buffSize,
+static void GetBufferedData(char *__restrict buff, size_t buffSize,
                             const StatData *__restrict data) {
   snprintf(buff, buffSize, "{id=%ld count=%d cost=%f primary=%u mode=%u}",
            data->id, data->count, data->cost, data->primary, data->mode);
 }
 
-static int checkResult(const StatData *data, const StatData *result,
+static int CheckResult(const StatData *data, const StatData *result,
                        size_t size, size_t resultSize) {
   if (size != resultSize) {
     fprintf(stderr, "Different size [size:%zu] [needly:%zu]\n", size,
@@ -40,15 +42,15 @@ static int checkResult(const StatData *data, const StatData *result,
     return 0;
   }
   for (size_t i = 0; i < size; ++i) {
-    if (checkEqualData(data + i, result + i) != 1) {
+    if (CheckEqualData(data + i, result + i) != 1) {
       char dumpedBuff[255];
       memset(dumpedBuff, 0, sizeof(dumpedBuff));
       char originalBuff[255];
       memset(originalBuff, 0, sizeof(originalBuff));
-      getBufferedData(dumpedBuff, sizeof(dumpedBuff), data + i);
-      getBufferedData(originalBuff, sizeof(originalBuff), result + i);
+      GetBufferedData(dumpedBuff, sizeof(dumpedBuff), data + i);
+      GetBufferedData(originalBuff, sizeof(originalBuff), result + i);
       fprintf(stderr,
-              BS_RED("Not equal at [index:%lu] [dumped:%s] [original:%s]\n"), i,
+              BS_RED("Not equal at [index:%zu] [dumped:%s] [original:%s]\n"), i,
               dumpedBuff, originalBuff);
       return 0;
     }
@@ -59,14 +61,14 @@ static int checkResult(const StatData *data, const StatData *result,
 static Status StoreDumpHelper(const char *path, const StatData *data,
                               size_t size) {
   Status result = StoreDump(path, data, size);
-  if (result != Success) {
+  if (result != SUCCESS) {
     fprintf(stderr, BS_RED("Cannot store dump in: [path:%s][status:%d]\n"),
             path, result);
   }
   return result;
 }
 
-static void startTest(const char *storePath1, const char *storePath2,
+static void StartTest(const char *storePath1, const char *storePath2,
                       const char *resultPath, const StatData *data1,
                       const StatData *data2, const StatData *result,
                       size_t dataSize1, size_t dataSize2, size_t resultSizeBase,
@@ -78,15 +80,16 @@ static void startTest(const char *storePath1, const char *storePath2,
   FILE *fd2 = fopen(storePath2, "wb+");
   FILE *fd3 = fopen(resultPath, "ab+");
 
-  if (fd1)
+  if (BINARYSERIALIZER_UNLIKELY(fd1)) {
     fclose(fd1);
+  }
 
-  if (fd2)
+  if (BINARYSERIALIZER_UNLIKELY(fd2)) {
     fclose(fd2);
-
-  if (fd3)
+  }
+  if (BINARYSERIALIZER_UNLIKELY(fd3)) {
     fclose(fd3);
-
+  }
   StoreDumpHelper(storePath1, data1, dataSize1);
   StoreDumpHelper(storePath2, data2, dataSize2);
 
@@ -129,8 +132,8 @@ static void startTest(const char *storePath1, const char *storePath2,
   StatData *resultData = NULL;
   size_t resultSize = 0;
   Status loadResult = LoadDump(resultPath, &resultData, &resultSize);
-  if (loadResult != Success &&
-      ((loadResult == EmptyFile || loadResult == BadFile) &&
+  if (loadResult != SUCCESS &&
+      ((loadResult == EMPTY_FILE || loadResult == BAD_FILE) &&
        resultData != result)) {
     fprintf(stderr, BS_RED("Cannot load dump from [path:%s]\n"), resultPath);
     remove(storePath1);
@@ -144,7 +147,7 @@ static void startTest(const char *storePath1, const char *storePath2,
     return;
   }
 
-  if (checkResult(resultData, result, resultSize, resultSizeBase) == 0) {
+  if (CheckResult(resultData, result, resultSize, resultSizeBase) == 0) {
     fprintf(stderr, "Data from Dump not equal with original data!\n");
     remove(storePath1);
     remove(storePath2);
@@ -167,13 +170,13 @@ static void startTest(const char *storePath1, const char *storePath2,
   clearTime(begin);
 }
 
-void startRoutine() {
+void StartRoutine() {
   size_t passedCount = 0, failedCount = 0;
   double elapsedTime = 0.0;
-  for (size_t i = 0; i < getTestsCount(); ++i) {
-    TestCase *tc = getTestCase(i);
+  for (size_t i = 0; i < GetTestsCount(); ++i) {
+    const TestCase *tc = GetTestCase(i);
     fprintf(stdout, "Test case begin [index:%zu]...\n", i);
-    startTest(tc->firstStorePath, tc->secondStorePath, tc->resultPath,
+    StartTest(tc->firstStorePath, tc->secondStorePath, tc->resultPath,
               tc->firstIn, tc->secondIn, tc->resultData, tc->firstInSize,
               tc->secondInSize, tc->resultSize, &passedCount, &failedCount,
               &elapsedTime, i);

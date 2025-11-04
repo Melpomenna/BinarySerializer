@@ -109,11 +109,12 @@
 #define BINARYSERIALIZER_UNLIKELY(__condition)                                 \
   __builtin_expect(!!(__condition), 0)
 
-#if defined(NDEBUG) || !defined(BS_ENABLE_LOG)
+#if defined(NDEBUG)
 #define LOG_ERR(...)
 #define LOG(...)
 #else
 
+#if defined(BS_ENABLE_LOG)
 /**
  * @def LOG_ERR
  * @brief Макрос для вывода сообщений об ошибках в stderr
@@ -127,7 +128,7 @@
  *
  * @code{.c}
  * if (ptr == NULL) {
- *     LOG_ERR("Error: Failed to allocate %zu bytes\n", size);
+ *     LOG_ERR("ERROR: Failed to allocate %zu bytes\n", size);
  * }
  * @endcode
  *
@@ -153,8 +154,12 @@
  * @see LOG_ERR
  */
 #define LOG(...) fprintf(stdout, __VA_ARGS__)
-#endif
 
 /** @} */ // end of Config group
+#else
+#define LOG_ERR(...)
+#define LOG(...)
+#endif
+#endif
 
 #endif // BINARYSERIALIZER_CONFIG_H

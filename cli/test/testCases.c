@@ -141,24 +141,44 @@ static StatData testCaseResult4[] = {
 
 #pragma endregion
 
+#pragma region TestCase5Base
+static StatData testCase5[] = {
+    {.id = 90189, .count = 1, .cost = -8.008, .primary = 1, .mode = 3},
+    {.id = 90189, .count = 1, .cost = 1.001, .primary = 0, .mode = 5},
+    {.id = 90189, .count = 1, .cost = 1.001, .primary = 1, .mode = 3},
+    {.id = 90189, .count = 1, .cost = 1.001, .primary = 0, .mode = 5},
+    {.id = 90189, .count = 1, .cost = 1.001, .primary = 1, .mode = 3},
+    {.id = 90189, .count = 1, .cost = 1.001, .primary = 0, .mode = 5}};
+static StatData testCase51[] = {
+    {.id = 90189, .count = 1, .cost = 1.001, .primary = 1, .mode = 7},
+    {.id = 90189, .count = 1, .cost = 1.001, .primary = 1, .mode = 4},
+    {.id = 90189, .count = 1, .cost = 1.001, .primary = 1, .mode = 2}};
+
+static StatData testCaseResult5[] = {
+    {.id = 90189, .count = 9, .cost = 0, .primary = 0, .mode = 7}};
+
+#pragma endregion
+
 static TestCase cases[] = {
     DECLARE_CASE("case_1_in_a.dat", "case_1_in_b.dat", "case_1_out.dat",
-                 testCase1, testCase2, testCaseResult1), // Success TestCase 0
+                 testCase1, testCase2, testCaseResult1), // SUCCESS TestCase 0
     DECLARE_CASE("case_2_in_a.dat", "case_2_in_b.dat", "case_2_out.dat",
-                 testCase12, NULL, testCase12), // Success TestCase 1
+                 testCase12, NULL, testCase12), // SUCCESS TestCase 1
     DECLARE_CASE(NULL, NULL, "case_2_out.dat", testCase12, NULL,
                  testCase12), // Must failed TestCase2
     DECLARE_CASE("case_2_in_a.dat", "case_2_in_b.dat", "case_2_out.dat", NULL,
                  NULL, testCase12),                   //  Must failed TestCase 3
     DECLARE_CASE(NULL, NULL, NULL, NULL, NULL, NULL), // Must failed TestCase 4
     DECLARE_CASE("case_3_in_a.dat", "case_3_in_b.dat", "case_3_out.dat",
-                 testCase3, testCase31, testCaseResult3), // Success TestCase 5
+                 testCase3, testCase31, testCaseResult3), // SUCCESS TestCase 5
     DECLARE_CASE("case_1_in_a.dat", "case_1_in_b.dat", "case_1_out.dat",
                  testCase1, testCase2, NULL), // Must failed TestCase 6
     DECLARE_CASE("case_4_in_a.dat", "case_4_in_b.dat", "case_4_out.dat",
-                 testCase4, testCase41, testCaseResult4), // Success TestCase 7
+                 testCase4, testCase41, testCaseResult4), // SUCCESS TestCase 7
+    DECLARE_CASE("case_5_in_a.dat", "case_5_in_b.dat", "case_5_out.dat",
+                 testCase5, testCase51, testCaseResult5), // SUCCESS TestCase 8
 };
 
-TestCase *getTestCase(size_t id) { return &cases[id]; }
+TestCase *GetTestCase(size_t id) { return &cases[id]; }
 
-size_t getTestsCount() { return sizeof(cases) / sizeof(TestCase); }
+size_t GetTestsCount() { return sizeof(cases) / sizeof(TestCase); }

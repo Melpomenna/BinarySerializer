@@ -13,6 +13,14 @@ target_include_directories(${target} PRIVATE
 						   ${CMAKE_SOURCE_DIR}/include
 )
 
+if (${BS_ENABLE_MI_MALLOC})
+    message(STATUS "Link bs library with mimalloc allocator")
+
+    target_compile_definitions(${target} PRIVATE BS_ENABLE_MI_MALLOC)
+
+    target_link_libraries(${target} PRIVATE mimalloc)
+endif()
+
 include(compileOptions)
 SetCompileOptionsCXX(${target})
 

@@ -275,5 +275,8 @@ bb.out.*
 build
 perf.data*
 install
+*.dat
+*.profraw
+coverage
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,c,clion+all,visualstudiocode,gcov,valgrind,autotools,cmake

@@ -11,14 +11,13 @@ SetCompileOptionsLibC(${target})
 
 target_include_directories(${target} PRIVATE 
 						   ${CMAKE_SOURCE_DIR}/include
-                           ${CMAKE_SOURCE_DIR}/include/internal
 )
 
 target_compile_definitions(${target} PRIVATE
                            BINARYSERIALIZER_BUTCHE_SIZE=${BINARYSERIALIZER_BUTCHE_SIZE}
 )
 
-if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+if (${CMAKE_BUILD_TYPE} MATCHES "debug")
     if (${BS_ENABLE_LOG})
         target_compile_definitions(${target} PRIVATE BS_ENABLE_LOG)
     endif()

@@ -4,7 +4,7 @@
 
 void TestCreateHashTableWithIDs(const std::vector<int> &ids) {
   MergeHashTable table;
-  int result = initHashTable(&table, NULL, NULL, NULL);
+  int result = InitHashTable(&table, NULL, NULL, NULL);
   EXPECT_EQ(result, 1);
   StatData data;
   for (auto id : ids) {
@@ -13,10 +13,10 @@ void TestCreateHashTableWithIDs(const std::vector<int> &ids) {
     data.count = 1;
     data.mode = 1;
     data.primary = 0;
-    result = insertToHashTable(&table, &data);
+    result = InsertToHashTable(&table, &data);
     EXPECT_EQ(result, 1);
   }
-  clearHashTable(&table);
+  ClearHashTable(&table);
   EXPECT_EQ(table.buckets, nullptr);
   EXPECT_EQ(table.bucketsCount, 0);
   EXPECT_EQ(table.comparator, nullptr);

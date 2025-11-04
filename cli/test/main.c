@@ -1,6 +1,6 @@
 #include "app.h"
 
 int main() {
-  startRoutine();
+  StartRoutine();
   return 0;
 }

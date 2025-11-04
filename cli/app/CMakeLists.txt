@@ -13,7 +13,7 @@ target_include_directories(${target} PRIVATE
 )
 target_link_libraries(${target} PRIVATE bs)
 
-if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+if (${CMAKE_BUILD_TYPE} MATCHES "debug")
     if (${BS_ENABLE_LOG})
         target_compile_definitions(${target} PRIVATE BS_ENABLE_LOG)
     endif()

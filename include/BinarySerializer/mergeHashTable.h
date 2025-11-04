@@ -22,7 +22,7 @@
  * и производительностью для типичных сценариев использования.
  *
  * @note При большом количестве данных рекомендуется увеличить это значение
- * @see initHashTable
+ * @see InitHashTable
  */
 #define BINARYSERIALIZER_DEFUALT_BUCKETS_COUNT 512
 
@@ -31,13 +31,13 @@
 #include <stddef.h>
 
 /**
- * @typedef hash_t
+ * @typedef HashT
  * @brief Тип для хранения хеш-значения
  *
  * Представляет собой 64-битное беззнаковое целое число,
  * обеспечивающее широкий диапазон хеш-значений и минимизацию коллизий.
  */
-typedef unsigned long long hash_t;
+typedef unsigned long long HashT;
 
 /**
  * @struct Bucket
@@ -54,7 +54,7 @@ struct Bucket;
  * @brief Внутренняя структура для представления узла в бакете
  *
  * Непрозрачный тип для элемента связного списка внутри бакета.
- * Используется функцией findInHashTable() для возврата найденного элемента.
+ * Используется функцией FindInHashTable() для возврата найденного элемента.
  */
 struct Node;
 
@@ -63,22 +63,22 @@ struct Node;
  * @brief Функция вычисления хеш-значения для данных
  *
  * @param data Указатель на данные для хеширования
- * @return Хеш-значение типа hash_t
+ * @return Хеш-значение типа HashT
  *
  * @par Требования к реализации:
  * - Функция должна быть детерминированной (одинаковые данные → одинаковый хеш)
- * - Хорошее распределение значений по диапазону hash_t
+ * - Хорошее распределение значений по диапазону HashT
  * - Быстрое вычисление
  *
  * @code{.c}
- * hash_t myHashFunc(const StatData *data) {
- *     return (hash_t)data->id * 2654435761ULL; // Умножение на простое число
+ * HashT MyHashFunc(const StatData *data) {
+ *     return (HashT)data->id * 2654435761ULL; // Умножение на простое число
  * }
  * @endcode
  *
- * @see initHashTable
+ * @see InitHashTable
  */
-typedef hash_t (*HashFunction)(const StatData *data);
+typedef HashT (*HashFunction)(const StatData *data);
 
 /**
  * @typedef MergeFunction
@@ -95,13 +95,13 @@ typedef hash_t (*HashFunction)(const StatData *data);
  * @warning lhs и rhs не должны пересекаться в памяти (используется __restrict)
  *
  * @code{.c}
- * void mergeSumData(StatData *lhs, const StatData *rhs) {
+ * void MergeSumData(StatData *lhs, const StatData *rhs) {
  *     lhs->count += rhs->count;
  *     lhs->sum += rhs->sum;
  * }
  * @endcode
  *
- * @see insertToHashTable
+ * @see InsertToHashTable
  */
 typedef void (*MergeFunction)(StatData *__restrict lhs,
                               const StatData *__restrict rhs);
@@ -112,7 +112,7 @@ typedef void (*MergeFunction)(StatData *__restrict lhs,
  *
  * @param data Указатель на текущий элемент данных
  * @param args Пользовательские аргументы, переданные в
- * foreachElementInHashTable()
+ * ForeachElementInHashTable()
  *
  * @par Использование:
  * Вызывается для каждого элемента таблицы при обходе.
@@ -141,7 +141,6 @@ typedef void (*ForeachFunction)(StatData *__restrict data,
  *
  * @par Требования:
  * - Должна быть симметричной: compare(a, b) == compare(b, a)
- * - Транзитивность: если compare(a, b) и compare(b, c), то compare(a, c)
  *
  * @note Используется для определения, нужно ли объединять элементы
  *
@@ -151,7 +150,7 @@ typedef void (*ForeachFunction)(StatData *__restrict data,
  * }
  * @endcode
  *
- * @see insertToHashTable, findInHashTable
+ * @see InsertToHashTable, FindInHashTable
  */
 typedef int (*StatDataCompareFunction)(const StatData *__restrict lhs,
                                        const StatData *__restrict rhs);
@@ -166,16 +165,16 @@ typedef int (*StatDataCompareFunction)(const StatData *__restrict lhs,
  * @par Пример использования:
  * @code{.c}
  * MergeHashTable table;
- * initHashTable(&table, myHash, myMerge, myCompare);
+ * InitHashTable(&table, myHash, myMerge, myCompare);
  *
  * StatData data1 = {.id = 1, .value = 100};
- * insertToHashTable(&table, &data1);
+ * InsertToHashTable(&table, &data1);
  *
- * clearHashTable(&table);
+ * ClearHashTable(&table);
  * @endcode
  *
- * @warning Перед использованием необходимо вызвать initHashTable()
- * @warning После использования обязательно вызвать clearHashTable()
+ * @warning Перед использованием необходимо вызвать InitHashTable()
+ * @warning После использования обязательно вызвать ClearHashTable()
  */
 typedef struct MergeHashTable {
   /**
@@ -227,20 +226,20 @@ extern "C" {
  *
  * @return 1 при успешной инициализации, нулевое значение при ошибке
  *
- * @warning Перед повторной инициализацией нужно вызвать clearHashTable()
+ * @warning Перед повторной инициализацией нужно вызвать ClearHashTable()
  *
  * @code{.c}
  * MergeHashTable table;
- * if (initHashTable(&table, hashFunc, mergeFunc, compareFunc) != 0) {
+ * if (InitHashTable(&table, hashFunc, mergeFunc, compareFunc) != 0) {
  *     fprintf(stderr, "Failed to initialize hash table\n");
  *     return -1;
  * }
  * @endcode
  *
- * @see clearHashTable, BINARYSERIALIZER_DEFUALT_BUCKETS_COUNT
+ * @see ClearHashTable, BINARYSERIALIZER_DEFUALT_BUCKETS_COUNT
  */
 BINARYSERIALIZER_NODISCARD BINARYSERIALIZER_API int
-initHashTable(MergeHashTable *table, HashFunction hash, MergeFunction merge,
+InitHashTable(MergeHashTable *table, HashFunction hash, MergeFunction merge,
               StatDataCompareFunction comparator);
 
 /**
@@ -256,22 +255,22 @@ initHashTable(MergeHashTable *table, HashFunction hash, MergeFunction merge,
  * @return 1 при успешной вставке/слиянии, нулевое значение при ошибке
  *
  * @note Функция создаёт копию данных, оригинал можно безопасно освободить
- * @warning table должна быть инициализирована через initHashTable()
+ * @warning table должна быть инициализирована через InitHashTable()
  *
  * @par Сложность:
  * Средняя: O(1), худшая: O(n)
  *
  * @code{.c}
  * StatData data = {.id = 42, .value = 100};
- * if (insertToHashTable(&table, &data) == 0) {
+ * if (InsertToHashTable(&table, &data) == 0) {
  *     LOG_ERR("Insertion failed\n");
  * }
  * @endcode
  *
- * @see initHashTable, MergeFunction, StatDataCompareFunction
+ * @see InitHashTable, MergeFunction, StatDataCompareFunction
  */
 BINARYSERIALIZER_NODISCARD BINARYSERIALIZER_API int
-insertToHashTable(MergeHashTable *table, const StatData *data);
+InsertToHashTable(MergeHashTable *table, const StatData *data);
 
 /**
  * @brief Удаление элемента из хеш-таблицы
@@ -290,12 +289,12 @@ insertToHashTable(MergeHashTable *table, const StatData *data);
  *
  * @code{.c}
  * StatData toRemove = {.id = 42};
- * eraseFromHashTable(&table, &toRemove);
+ * EraseFromHashTable(&table, &toRemove);
  * @endcode
  *
- * @see findInHashTable, clearHashTable
+ * @see FindInHashTable, ClearHashTable
  */
-BINARYSERIALIZER_API void eraseFromHashTable(MergeHashTable *table,
+BINARYSERIALIZER_API void EraseFromHashTable(MergeHashTable *table,
                                              const StatData *data);
 
 /**
@@ -316,16 +315,16 @@ BINARYSERIALIZER_API void eraseFromHashTable(MergeHashTable *table,
  *
  * @code{.c}
  * StatData searchKey = {.id = 42};
- * struct Node *found = findInHashTable(&table, &searchKey);
+ * struct Node *found = FindInHashTable(&table, &searchKey);
  * if (found != NULL) {
  *     // Элемент найден
  * }
  * @endcode
  *
- * @see insertToHashTable, eraseFromHashTable
+ * @see InsertToHashTable, EraseFromHashTable
  */
 BINARYSERIALIZER_NODISCARD BINARYSERIALIZER_API struct Node *
-findInHashTable(const MergeHashTable *table, const StatData *data);
+FindInHashTable(const MergeHashTable *table, const StatData *data);
 
 /**
  * @brief Очистка хеш-таблицы и освобождение памяти
@@ -335,18 +334,18 @@ findInHashTable(const MergeHashTable *table, const StatData *data);
  *
  * @param[in,out] table Указатель на хеш-таблицу для очистки
  *
- * @note После вызова необходима повторная инициализация через initHashTable()
+ * @note После вызова необходима повторная инициализация через InitHashTable()
  * @warning Все указатели на элементы таблицы становятся невалидными
  *
  * @code{.c}
- * clearHashTable(&table);
+ * ClearHashTable(&table);
  * // Теперь таблицу можно инициализировать заново
- * initHashTable(&table, hashFunc, mergeFunc, compareFunc);
+ * InitHashTable(&table, hashFunc, mergeFunc, compareFunc);
  * @endcode
  *
- * @see initHashTable
+ * @see InitHashTable
  */
-BINARYSERIALIZER_API void clearHashTable(MergeHashTable *table);
+BINARYSERIALIZER_API void ClearHashTable(MergeHashTable *table);
 
 /**
  * @brief Экспорт всех элементов таблицы в массив
@@ -369,7 +368,7 @@ BINARYSERIALIZER_API void clearHashTable(MergeHashTable *table);
  * StatData *array = NULL;
  * size_t count = 0;
  *
- * if (hashTableToArray(&table, &array, &count) == 1) {
+ * if (HashTableToArray(&table, &array, &count) == 1) {
  *     for (size_t i = 0; i < count; i++) {
  *         printf("Element %zu: %d\n", i, array[i].id);
  *     }
@@ -377,10 +376,10 @@ BINARYSERIALIZER_API void clearHashTable(MergeHashTable *table);
  * }
  * @endcode
  *
- * @see foreachElementInHashTable
+ * @see ForeachElementInHashTable
  */
 BINARYSERIALIZER_NODISCARD BINARYSERIALIZER_API int
-hashTableToArray(const MergeHashTable *table, StatData **data, size_t *size);
+HashTableToArray(const MergeHashTable *table, StatData **data, size_t *size);
 
 /**
  * @brief Применение функции ко всем элементам таблицы
@@ -402,14 +401,14 @@ hashTableToArray(const MergeHashTable *table, StatData **data, size_t *size);
  * }
  *
  * int totalSum = 0;
- * foreachElementInHashTable(&table, sumValues, &totalSum);
+ * ForeachElementInHashTable(&table, sumValues, &totalSum);
  * printf("Total: %d\n", totalSum);
  * @endcode
  *
- * @see ForeachFunction, hashTableToArray
+ * @see ForeachFunction, HashTableToArray
  */
 BINARYSERIALIZER_API void
-foreachElementInHashTable(const MergeHashTable *__restrict table,
+ForeachElementInHashTable(const MergeHashTable *__restrict table,
                           ForeachFunction action, void *__restrict args);
 
 #if defined(__cplusplus)

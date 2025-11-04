@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['nodes_0',['nodes',['../structBucket.html#a5b00b68a557810dc165976e0682c6daa',1,'Bucket']]],
-  ['nodescount_1',['nodesCount',['../structBucket.html#a88184edaf2b39c1f810fa0ae25e85665',1,'Bucket']]]
+  ['id_0',['id',['../structField.html#a5cd0d1a119cb136c2e442be4b4b7fdb7',1,'Field']]],
+  ['index_1',['index',['../structNode.html#a4bfa7ac41a9ba23d268a478f9b0dab45',1,'Node']]]
 ];
